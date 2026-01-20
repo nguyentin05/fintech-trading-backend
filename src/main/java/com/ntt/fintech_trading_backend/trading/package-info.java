@@ -1,0 +1,1 @@
+package com.ntt.fintech_trading_backend.trading;
