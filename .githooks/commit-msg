@@ -6,7 +6,7 @@ MSG="$(cat "$MSG_FILE")"
 
 ALLOWED_TYPES="feat|fix|docs|style|refactor|perf|test|chore|ci|build"
 
-ALLOWED_SCOPES=("identity" "wallet" "market" "trade" "core" "notification" "portfolio" "admin" "infra" "config" "db" "multi")
+ALLOWED_SCOPES=("core" "infra" "config" "multi" "admin" "analytics" "auth" "common" "kyc" "market" "notification" "trading" "wallet")
 
 PATTERN="^(${ALLOWED_TYPES})\(([a-z0-9_-]+)\): .+"
 
