@@ -19,4 +19,9 @@ public class AuthController {
     public ResponseEntity<ApiResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
         return ResponseEntity.ok(authService.sendRegistrationOtp(request));
     }
+
+    @PostMapping("/check-otp")
+    public ResponseEntity<ApiResponse> checkOtp(@Valid @RequestBody CheckOtpRequest request) {
+        return ResponseEntity.ok(authService.checkRegistrationOtp(request));
+    }
 }

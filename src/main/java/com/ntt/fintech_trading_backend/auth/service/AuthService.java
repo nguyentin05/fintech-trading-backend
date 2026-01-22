@@ -1,5 +1,6 @@
 package com.ntt.fintech_trading_backend.auth.service;
 
+import com.ntt.fintech_trading_backend.auth.dto.request.CheckOtpRequest;
 import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.repository.UserRepository;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
@@ -28,5 +29,24 @@ public class AuthService {
         emailService.sendOtpEmail(request.getEmail(), otp);
 
         return ApiResponse.builder().message("OTP đã được gửi thành công. Vui lòng kiểm tra email.").build();
+    }
+
+    public ApiResponse checkRegistrationOtp(CheckOtpRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email đã tồn tại!");
+        }
+
+        String key = "OTP_REG_" + request.getEmail();
+        String otp = redisTemplate.opsForValue().get(key);
+
+        if (otp == null) {
+            throw new RuntimeException("Mã OTP đã hết hạn hoặc không tồn tại.");
+        }
+
+        if (!otp.equals(request.getOtp())) {
+            throw new RuntimeException("Mã OTP không chính xác.");
+        }
+
+        return ApiResponse.builder().message("OTP hợp lệ.").build();
     }
 }
