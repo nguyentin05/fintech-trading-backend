@@ -1,12 +1,13 @@
 package com.ntt.fintech_trading_backend.auth.controller;
 
+import com.ntt.fintech_trading_backend.auth.dto.request.CheckOtpRequest;
+import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.service.AuthService;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -15,13 +16,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse> sendOtp(@RequestBody Map<String, String> request) {
-        authService.sendRegistrationOtp(request.get("email"));
-
-        return ResponseEntity.ok(
-                ApiResponse.builder()
-                        .message("OTP đã được gửi thành công. Vui lòng kiểm tra email.")
-                        .build()
-        );
+    public ResponseEntity<ApiResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
+        return ResponseEntity.ok(authService.sendRegistrationOtp(request));
     }
 }
