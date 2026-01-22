@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,11 +50,13 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "user_role")
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Builder.Default
     private UserRole role = UserRole.TRADER;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "user_status")
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
@@ -75,7 +79,8 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
-    @Column(name = "last_login_ip", columnDefinition = "INET")
+    @Column(name = "last_login_ip", length = 50)
+    @Size(max = 50)
     private String lastLoginIp;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
