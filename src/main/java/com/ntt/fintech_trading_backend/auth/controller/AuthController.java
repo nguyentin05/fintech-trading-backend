@@ -1,6 +1,7 @@
 package com.ntt.fintech_trading_backend.auth.controller;
 
 import com.ntt.fintech_trading_backend.auth.dto.request.CheckOtpRequest;
+import com.ntt.fintech_trading_backend.auth.dto.request.RegisterRequest;
 import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.service.AuthService;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
@@ -23,5 +24,10 @@ public class AuthController {
     @PostMapping("/check-otp")
     public ResponseEntity<ApiResponse> checkOtp(@Valid @RequestBody CheckOtpRequest request) {
         return ResponseEntity.ok(authService.checkRegistrationOtp(request));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 }
