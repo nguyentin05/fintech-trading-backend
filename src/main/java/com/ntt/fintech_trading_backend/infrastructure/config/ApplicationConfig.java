@@ -1,4 +1,4 @@
-package com.ntt.fintech_trading_backend.auth.config;
+package com.ntt.fintech_trading_backend.infrastructure.config;
 
 import com.ntt.fintech_trading_backend.auth.security.MyUserDetailsService;
 import lombok.RequiredArgsConstructor;

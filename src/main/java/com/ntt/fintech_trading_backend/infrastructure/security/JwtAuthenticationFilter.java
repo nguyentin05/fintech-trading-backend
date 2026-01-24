@@ -1,4 +1,4 @@
-package com.ntt.fintech_trading_backend.auth.security;
+package com.ntt.fintech_trading_backend.infrastructure.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

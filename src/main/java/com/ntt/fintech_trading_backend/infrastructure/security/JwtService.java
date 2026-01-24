@@ -1,4 +1,4 @@
-package com.ntt.fintech_trading_backend.auth.security;
+package com.ntt.fintech_trading_backend.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
