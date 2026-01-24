@@ -1,6 +1,6 @@
-package com.ntt.fintech_trading_backend.auth.config;
+package com.ntt.fintech_trading_backend.infrastructure.config;
 
-import com.ntt.fintech_trading_backend.auth.security.JwtAuthenticationFilter;
+import com.ntt.fintech_trading_backend.infrastructure.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
