@@ -8,7 +8,7 @@ import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.dto.response.AuthResponse;
 import com.ntt.fintech_trading_backend.auth.repository.TokenRepository;
 import com.ntt.fintech_trading_backend.auth.repository.UserRepository;
-import com.ntt.fintech_trading_backend.auth.security.JwtService;
+import com.ntt.fintech_trading_backend.infrastructure.security.JwtService;
 import com.ntt.fintech_trading_backend.auth.security.SecurityUser;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
 import com.ntt.fintech_trading_backend.notification.service.EmailService;
@@ -129,5 +129,32 @@ public class AuthService {
             token.setRevoked(true);
         });
         tokenRepository.saveAll(validUserTokens);
+    }
+
+    public AuthResponse refreshToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid Bearer token");
+        }
+
+        final String refreshToken = authHeader.substring(7);
+        final String userEmail = jwtService.extractUsername(refreshToken);
+
+        if (userEmail != null) {
+            var user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            if (jwtService.isTokenValid(refreshToken, new SecurityUser(user))) {
+                var accessToken = jwtService.generateToken(new SecurityUser(user));
+
+                revokeAllUserTokens(user);
+                saveUserToken(user, accessToken);
+
+                return AuthResponse.builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .build();
+            }
+        }
+        throw new IllegalStateException("Refresh token is invalid or expired!");
     }
 }
