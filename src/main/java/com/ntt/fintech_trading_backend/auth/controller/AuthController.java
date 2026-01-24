@@ -7,10 +7,16 @@ import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.dto.response.AuthResponse;
 import com.ntt.fintech_trading_backend.auth.service.AuthService;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/auth")
@@ -36,5 +42,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+    ) {
+        try {
+            return ResponseEntity.ok(authService.refreshToken(authHeader));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 }
