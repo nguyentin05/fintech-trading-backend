@@ -1,8 +1,10 @@
 package com.ntt.fintech_trading_backend.auth.controller;
 
 import com.ntt.fintech_trading_backend.auth.dto.request.CheckOtpRequest;
+import com.ntt.fintech_trading_backend.auth.dto.request.LoginRequest;
 import com.ntt.fintech_trading_backend.auth.dto.request.RegisterRequest;
 import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
+import com.ntt.fintech_trading_backend.auth.dto.response.AuthResponse;
 import com.ntt.fintech_trading_backend.auth.service.AuthService;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -29,5 +31,10 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 }

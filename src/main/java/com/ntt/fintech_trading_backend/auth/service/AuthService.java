@@ -1,16 +1,21 @@
 package com.ntt.fintech_trading_backend.auth.service;
 
-import com.ntt.fintech_trading_backend.auth.domain.User;
-import com.ntt.fintech_trading_backend.auth.domain.UserRole;
-import com.ntt.fintech_trading_backend.auth.domain.UserStatus;
+import com.ntt.fintech_trading_backend.auth.domain.*;
 import com.ntt.fintech_trading_backend.auth.dto.request.CheckOtpRequest;
+import com.ntt.fintech_trading_backend.auth.dto.request.LoginRequest;
 import com.ntt.fintech_trading_backend.auth.dto.request.RegisterRequest;
 import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
+import com.ntt.fintech_trading_backend.auth.dto.response.AuthResponse;
+import com.ntt.fintech_trading_backend.auth.repository.TokenRepository;
 import com.ntt.fintech_trading_backend.auth.repository.UserRepository;
+import com.ntt.fintech_trading_backend.auth.security.JwtService;
+import com.ntt.fintech_trading_backend.auth.security.SecurityUser;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
 import com.ntt.fintech_trading_backend.notification.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +29,9 @@ public class AuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final TokenRepository tokenRepository;
 
     public ApiResponse sendRegistrationOtp(SendOtpRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -81,5 +89,45 @@ public class AuthService {
         redisTemplate.delete(key);
 
         return ApiResponse.builder().message("Đăng ký thành công.").build();
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+
+        var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
+        SecurityUser userDetails = new SecurityUser(user);
+
+        var token = jwtService.generateToken(userDetails);
+        var refreshToken = jwtService.generateRefreshToken(userDetails);
+
+        revokeAllUserTokens(user);
+        saveUserToken(user, token);
+
+        return AuthResponse.builder().accessToken(token).refreshToken(refreshToken).build();
+    }
+
+    private void saveUserToken(User user, String jwtToken) {
+        var token = Token.builder()
+                .user(user)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .expired(false)
+                .revoked(false)
+                .build();
+        tokenRepository.save(token);
+    }
+
+    private void revokeAllUserTokens(User user) {
+        var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
+        if (validUserTokens.isEmpty()) return;
+
+        validUserTokens.forEach(token -> {
+            token.setExpired(true);
+            token.setRevoked(true);
+        });
+        tokenRepository.saveAll(validUserTokens);
     }
 }
