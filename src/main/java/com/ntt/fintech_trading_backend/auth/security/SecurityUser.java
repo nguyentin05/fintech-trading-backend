@@ -1,7 +1,6 @@
 package com.ntt.fintech_trading_backend.auth.security;
 
 import com.ntt.fintech_trading_backend.auth.domain.User;
-import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;

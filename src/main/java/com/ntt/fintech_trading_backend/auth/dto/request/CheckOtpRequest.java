@@ -8,10 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CheckOtpRequest {
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "FIELD_REQUIRED")
+    @Email(message = "EMAIL_INVALID")
     private String email;
 
-    @NotBlank(message = "OTP không được để trống")
+    @NotBlank(message = "FIELD_REQUIRED")
     private String otp;
 }
