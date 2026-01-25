@@ -8,6 +8,8 @@ import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.dto.response.AuthResponse;
 import com.ntt.fintech_trading_backend.auth.repository.TokenRepository;
 import com.ntt.fintech_trading_backend.auth.repository.UserRepository;
+import com.ntt.fintech_trading_backend.common.exception.AppException;
+import com.ntt.fintech_trading_backend.common.exception.ErrorCode;
 import com.ntt.fintech_trading_backend.infrastructure.security.JwtService;
 import com.ntt.fintech_trading_backend.auth.security.SecurityUser;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
@@ -18,6 +20,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -32,48 +35,46 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final TokenRepository tokenRepository;
+    private static final String OTP_PREFIX = "OTP_REG_";
 
-    public ApiResponse sendRegistrationOtp(SendOtpRequest request) {
+    public ApiResponse<Void> sendRegistrationOtp(SendOtpRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại!");
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
 
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-        redisTemplate.opsForValue().set("OTP_REG_" + request.getEmail(), otp, 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(OTP_PREFIX + request.getEmail(), otp, 5, TimeUnit.MINUTES);
         emailService.sendOtpEmail(request.getEmail(), otp);
 
-        return ApiResponse.builder().message("OTP đã được gửi thành công. Vui lòng kiểm tra email.").build();
+        return ApiResponse.<Void>builder().message("OTP đã được gửi thành công. Vui lòng kiểm tra email.").build();
     }
 
-    public ApiResponse checkRegistrationOtp(CheckOtpRequest request) {
+    public ApiResponse<Void> checkRegistrationOtp(CheckOtpRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại!");
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-        String key = "OTP_REG_" + request.getEmail();
+        String key = OTP_PREFIX + request.getEmail();
         String otp = redisTemplate.opsForValue().get(key);
 
-        if (otp == null) {
-            throw new RuntimeException("Mã OTP đã hết hạn hoặc không tồn tại.");
+        if (otp == null || !otp.equals(request.getOtp())) {
+            throw new AppException(ErrorCode.INVALID_OTP);
         }
 
-        if (!otp.equals(request.getOtp())) {
-            throw new RuntimeException("Mã OTP không chính xác.");
-        }
-
-        return ApiResponse.builder().message("OTP hợp lệ.").build();
+        return ApiResponse.<Void>builder().message("OTP hợp lệ.").build();
     }
 
-    public ApiResponse register(RegisterRequest request) {
-        String key = "OTP_REG_" + request.getEmail();
+    @Transactional
+    public ApiResponse<Void> register(RegisterRequest request) {
+        String key = OTP_PREFIX + request.getEmail();
         String otp = redisTemplate.opsForValue().get(key);
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại!");
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
 
         if (otp == null || !otp.equals(request.getOtp())) {
-            throw new RuntimeException("Mã OTP không hợp lệ.");
+            throw new AppException(ErrorCode.INVALID_OTP);
         }
 
         User user = User.builder()
@@ -88,7 +89,7 @@ public class AuthService {
         userRepository.save(user);
         redisTemplate.delete(key);
 
-        return ApiResponse.builder().message("Đăng ký thành công.").build();
+        return ApiResponse.<Void>builder().message("Đăng ký thành công.").build();
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -96,7 +97,8 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+        var user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         SecurityUser userDetails = new SecurityUser(user);
 
@@ -133,7 +135,7 @@ public class AuthService {
 
     public AuthResponse refreshToken(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Invalid Bearer token");
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
         final String refreshToken = authHeader.substring(7);
@@ -141,7 +143,7 @@ public class AuthService {
 
         if (userEmail != null) {
             var user = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
             if (jwtService.isTokenValid(refreshToken, new SecurityUser(user))) {
                 var accessToken = jwtService.generateToken(new SecurityUser(user));
@@ -155,6 +157,6 @@ public class AuthService {
                         .build();
             }
         }
-        throw new IllegalStateException("Refresh token is invalid or expired!");
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 }

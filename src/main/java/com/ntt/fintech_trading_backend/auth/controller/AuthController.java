@@ -7,51 +7,44 @@ import com.ntt.fintech_trading_backend.auth.dto.request.SendOtpRequest;
 import com.ntt.fintech_trading_backend.auth.dto.response.AuthResponse;
 import com.ntt.fintech_trading_backend.auth.service.AuthService;
 import com.ntt.fintech_trading_backend.common.dto.response.ApiResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthController {
-    private final AuthService authService;
+    AuthService authService;
 
     @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
-        return ResponseEntity.ok(authService.sendRegistrationOtp(request));
+    ApiResponse<Void> sendOtp(@Valid @RequestBody SendOtpRequest request) {
+        return authService.sendRegistrationOtp(request);
     }
 
     @PostMapping("/check-otp")
-    public ResponseEntity<ApiResponse> checkOtp(@Valid @RequestBody CheckOtpRequest request) {
-        return ResponseEntity.ok(authService.checkRegistrationOtp(request));
+    ApiResponse<Void> checkOtp(@Valid @RequestBody CheckOtpRequest request) {
+        return authService.checkRegistrationOtp(request);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    ApiResponse<Void> register(@Valid @RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        var result = authService.login(request);
+        return ApiResponse.<AuthResponse>builder().result(result).build();
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
-    ) {
-        try {
-            return ResponseEntity.ok(authService.refreshToken(authHeader));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    ApiResponse<AuthResponse> refreshToken(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+        var result = authService.refreshToken(authHeader);
+        return ApiResponse.<AuthResponse>builder().result(result).build();
     }
 }
